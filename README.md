@@ -1,6 +1,7 @@
 # Koa Stateless CSRF
 
 [![Release](https://github.com/DASPRiD/koa-stateless-csrf/actions/workflows/release.yml/badge.svg)](https://github.com/DASPRiD/koa-stateless-csrf/actions/workflows/release.yml)
+[![codecov](https://codecov.io/gh/DASPRiD/koa-stateless-csrf/branch/main/graph/badge.svg?token=GBvU1lZb3Q)](https://codecov.io/gh/DASPRiD/koa-stateless-csrf)
 
 Stateless CSRF implementation for Koa based APIs, based on the `nosurf` implementation.
 
