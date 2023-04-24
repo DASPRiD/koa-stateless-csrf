@@ -1,4 +1,4 @@
-import {createHmac, randomBytes} from 'crypto';
+import {randomBytes} from 'crypto';
 import {tokenLength} from './token.js';
 
 export const oneTimePad = (data : Buffer, key : Buffer) : void => {
@@ -11,27 +11,6 @@ export const oneTimePad = (data : Buffer, key : Buffer) : void => {
     for (let i = 0; i < length; ++i) {
         data[i] ^= key[i];
     }
-};
-
-export const signToken = (data : Buffer, key : string) : Buffer => {
-    const signature = createHmac('sha256', key).update(data).digest();
-    const result = Buffer.allocUnsafe(data.length + signature.length);
-    data.copy(result);
-    signature.copy(result, tokenLength);
-
-    return result;
-};
-
-export const verifyTokenSignature = (data : Buffer, signature : Buffer, keys : readonly string[]) : boolean => {
-    for (const key of keys) {
-        const keySignature = createHmac('sha256', key).update(data).digest();
-
-        if (signature.equals(keySignature)) {
-            return true;
-        }
-    }
-
-    return false;
 };
 
 export const maskToken = (data : Buffer) : Buffer => {

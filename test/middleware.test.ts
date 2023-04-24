@@ -15,11 +15,9 @@ const createContext = (options ?: RequestOptions) => {
     return app.createContext(req, res);
 };
 
-const signingKeys = ['test'] as const;
 const voidNext = async () : Promise<void> => Promise.resolve();
 
 const badCsrfError = createHttpError(400, 'The CSRF token in the cookie doesn\'t match the one received in a header');
-const tamperedCsrfError = createHttpError(400, 'The CSRF token in the cookie has been tampered');
 
 const validHeaderToken = 'qWE6kYdLWfUw5FRBtOJB8614yfnR7/aKZpHYZSPlQ21AKLK9Cn0qDK4uwoxOFmcVPVP10tMfsmJiJSb4XpdI2g==';
 const validCookieToken = '6UmILI02c/meypbN+vQm5pArPCsC8EToBLT+nX1yC7f8VVEn43ZPPBgkl2h/9rd4bbkXONhjHri4urNugGLwaA';
@@ -27,7 +25,7 @@ const validCookieToken = '6UmILI02c/meypbN+vQm5pArPCsC8EToBLT+nX1yC7f8VVEn43ZPPB
 describe('Middleware', () => {
     it('should append vary header', async () => {
         const context = createContext();
-        const middleware = csrfMiddleware({signingKeys});
+        const middleware = csrfMiddleware();
         await middleware(context, voidNext);
 
         expect(context.response.get('Vary')).toEqual('Cookie');
@@ -39,7 +37,7 @@ describe('Middleware', () => {
                 'X-CSRF-Token': 'fetch',
             },
         });
-        const middleware = csrfMiddleware({signingKeys});
+        const middleware = csrfMiddleware();
         await middleware(context, voidNext);
 
         const cookieToken = context.response.get('Set-Cookie')[0].split(';')[0].split('=')[1];
@@ -56,7 +54,7 @@ describe('Middleware', () => {
             const context = createContext({
                 method: safeMethod as RequestMethod,
             });
-            const middleware = csrfMiddleware({signingKeys});
+            const middleware = csrfMiddleware();
             let nextCalled = false;
 
             await middleware(context, async () => {
@@ -70,7 +68,7 @@ describe('Middleware', () => {
 
     it('should not return token by default', async () => {
         const context = createContext();
-        const middleware = csrfMiddleware({signingKeys});
+        const middleware = csrfMiddleware();
         await middleware(context, voidNext);
 
         expect(context.response.get('X-CSRF-Token')).toEqual('');
@@ -83,7 +81,7 @@ describe('Middleware', () => {
                 'Cookie': `csrf_token=${validCookieToken}`,
             },
         });
-        const middleware = csrfMiddleware({signingKeys});
+        const middleware = csrfMiddleware();
 
         await expect(async () => {
             await middleware(context, voidNext);
@@ -99,7 +97,7 @@ describe('Middleware', () => {
                 'X-CSRF-Token': validHeaderToken,
             },
         });
-        const middleware = csrfMiddleware({signingKeys});
+        const middleware = csrfMiddleware();
 
         await expect(async () => {
             await middleware(context, voidNext);
@@ -116,25 +114,42 @@ describe('Middleware', () => {
                 'Cookie': `csrf_token=${validCookieToken}`,
             },
         });
-        const middleware = csrfMiddleware({signingKeys});
+        const middleware = csrfMiddleware();
 
         await middleware(context, voidNext);
     });
 
-    it('should report tampered CSRF token', async () => {
-        const tamperedToken = '0' + validCookieToken;
-
+    it('should allow changing cookie and header name', async () => {
         const context = createContext({
             method: 'POST',
             headers: {
-                'X-CSRF-Token': validHeaderToken,
-                'Cookie': `csrf_token=${tamperedToken}`,
+                'X-My-CSRF-Token': validHeaderToken,
+                'Cookie': `my_csrf_token=${validCookieToken}`,
             },
         });
-        const middleware = csrfMiddleware({signingKeys});
+        const middleware = csrfMiddleware({
+            headerName: 'X-My-CSRF-Token',
+            cookieName: 'my_csrf_token',
+        });
 
-        await expect(async () => {
-            await middleware(context, voidNext);
-        }).rejects.toThrow(tamperedCsrfError);
+        await middleware(context, voidNext);
+    });
+
+    it('should allow changing cookie options', async () => {
+        const context = createContext();
+        const middleware = csrfMiddleware({
+            cookieOptions: {
+                sameSite: 'strict',
+                domain: 'example.com',
+            },
+        });
+        await middleware(context, voidNext);
+
+        const cookieToken = context.response.get('Set-Cookie')[0];
+
+        expect(cookieToken).toContain('domain=example.com');
+        expect(cookieToken).toContain('samesite=strict');
+        expect(cookieToken).toContain('httponly');
+        expect(cookieToken).toContain('path=/');
     });
 });

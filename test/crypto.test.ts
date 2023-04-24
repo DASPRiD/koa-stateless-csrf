@@ -1,43 +1,8 @@
 import {describe, it, expect} from 'vitest';
-import {maskToken, oneTimePad, signToken, unmaskToken, verifyTokenSignature} from '../src/crypto.js';
+import {maskToken, oneTimePad, unmaskToken} from '../src/crypto.js';
 import {tokenLength} from '../src/token.js';
 
 describe('Crypto', () => {
-    describe('Signature', () => {
-        it('should successfully verify a signed token', () => {
-            const token = Buffer.alloc(tokenLength, 0);
-            const signedToken = signToken(token, 'test');
-
-            const extractedToken = signedToken.slice(0, tokenLength);
-            const signature = signedToken.slice(tokenLength);
-
-            expect(signature.length).toBeGreaterThan(0);
-            expect(verifyTokenSignature(extractedToken, signature, ['test'])).toBeTruthy();
-        });
-
-        it('should successfully verify a signed token with an older key', () => {
-            const token = Buffer.alloc(tokenLength, 0);
-            const signedToken = signToken(token, 'old');
-
-            const extractedToken = signedToken.slice(0, tokenLength);
-            const signature = signedToken.slice(tokenLength);
-
-            expect(signature.length).toBeGreaterThan(0);
-            expect(verifyTokenSignature(extractedToken, signature, ['test', 'old'])).toBeTruthy();
-        });
-
-        it('should fail with invalid signature', () => {
-            const token = Buffer.alloc(tokenLength, 0);
-            const signedToken = signToken(token, 'invalid');
-
-            const extractedToken = signedToken.slice(0, tokenLength);
-            const signature = signedToken.slice(tokenLength);
-
-            expect(signature.length).toBeGreaterThan(0);
-            expect(verifyTokenSignature(extractedToken, signature, ['test'])).toBeFalsy();
-        });
-    });
-
     describe('OTP', () => {
         it('should throw error on length mismatch', () => {
             const data = Buffer.from('a');

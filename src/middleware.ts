@@ -1,24 +1,15 @@
 import type {SetOption as CookieOptions} from 'cookies';
 import type {Context, Middleware} from 'koa';
-import {maskToken, signToken, verifyTokenSignature} from './crypto.js';
+import {maskToken} from './crypto.js';
 import {generateToken, tokenLength, verifyToken} from './token.js';
 
 export type CsrfOptions = {
     cookieName ?: string;
     headerName ?: string;
     cookieOptions ?: CookieOptions;
-    signingKeys : readonly [string, ...string[]];
 };
 
 export const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
-
-const tamperedCsrfError = (context : Context) : never => {
-    context.throw(
-        400,
-        'The CSRF token in the cookie has been tampered',
-        {name: 'CsrfError'}
-    );
-};
 
 const badCsrfError = (context : Context) : never => {
     context.throw(
@@ -28,9 +19,9 @@ const badCsrfError = (context : Context) : never => {
     );
 };
 
-export const csrfMiddleware = (options : CsrfOptions) : Middleware => {
-    const cookieName = options.cookieName ?? 'csrf_token';
-    const headerName = options.headerName ?? 'X-CSRF-Token';
+export const csrfMiddleware = (options ?: CsrfOptions) : Middleware => {
+    const cookieName = options?.cookieName ?? 'csrf_token';
+    const headerName = options?.headerName ?? 'X-CSRF-Token';
 
     const extractToken = (context : Context) : Buffer | 'fetch' | null => {
         const sentToken = context.get(headerName);
@@ -53,10 +44,10 @@ export const csrfMiddleware = (options : CsrfOptions) : Middleware => {
     const setTokenCookie = (context : Context, token : Buffer) => {
         context.cookies.set(
             cookieName,
-            signToken(token, options.signingKeys[0]).toString('base64'),
+            token.toString('base64'),
             {
                 path: '/',
-                ...options.cookieOptions,
+                ...options?.cookieOptions,
                 httpOnly: true,
                 signed: false,
             }
@@ -95,12 +86,6 @@ export const csrfMiddleware = (options : CsrfOptions) : Middleware => {
             // The token has just been regenerated, so we can skip any tests.
             setTokenResponse(context, realToken);
             return badCsrfError(context);
-        }
-
-        if (!verifyTokenSignature(realToken, realTokenSignature, options.signingKeys)) {
-            regenerateToken(context);
-            setTokenResponse(context, realToken);
-            return tamperedCsrfError(context);
         }
 
         if (!Buffer.isBuffer(sentToken) || !verifyToken(realToken, sentToken)) {

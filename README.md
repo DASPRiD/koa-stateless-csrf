@@ -5,8 +5,7 @@
 
 Stateless CSRF implementation for Koa based APIs, based on the `nosurf` implementation.
 
-It includes protection against [BREACH attacks](https://breachattack.com/) as well as tampering with cookies through
-sibling-domain injection via token signing.
+It includes protection against [BREACH attacks](https://breachattack.com/).
 
 ## Installation
 
@@ -19,9 +18,7 @@ To add CSRF protection to your API, simply add the CSRF middleware to your Koa a
 ```typescript
 import {csrfMiddleware} from 'koa-stateless-csrf';
 
-app.use(csrfMiddleware({
-    signingKeys: ['super-secret-key'],
-}));
+app.use(csrfMiddleware());
 ```
 
 This will configure the CSRF middleware with the default cookie name `csrf_token` and default header name
@@ -44,16 +41,6 @@ not valid anymore, you will receive a 400 error, with a new valid token supplied
 In order for your frontend to recognize and potentially retry the request, the error emitted by the middleware is a
 `http error` with its name set to `CsrfError`. You should forward this information to the frontend.
 
-## Token Signing
-
-The CSRF token cookie is signed with hmac-sha256 to protect against a malicious sibling domain injecting a precalculated
-token. By default, you'd only supply a single key. It is supported though to support multiple keys in order to
-facilitate key rotation. The newest key should always be the first one in the array, as this is the one being used for
-signing.
-
-After a while you can phase out old keys. As CSRF token cookies are only valid for the current browser session, it is
-safe to remove old keys after a couple of days.
-
 ## Cookie options
 
 Cookies will always be set as `http-only` and default to a path of `/`. This is sufficient for development, but in
@@ -63,7 +50,6 @@ production you should set the following options:
 import {csrfMiddleware} from 'koa-stateless-csrf';
 
 app.use(csrfMiddleware({
-    signingKeys: ['super-secret-key'],
     cookieOptions: {
         // If you API lives on the same exact domain as the frontend,
         // use that domain, otherwise use their parent domain
