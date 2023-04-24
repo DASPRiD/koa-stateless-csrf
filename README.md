@@ -1,5 +1,7 @@
 # Koa Stateless CSRF
 
+[![Release](https://github.com/DASPRiD/koa-stateless-csrf/actions/workflows/release.yml/badge.svg)](https://github.com/DASPRiD/koa-stateless-csrf/actions/workflows/release.yml)
+
 Stateless CSRF implementation for Koa based APIs, based on the `nosurf` implementation.
 
 It includes protection against [BREACH attacks](https://breachattack.com/) as well as tampering with cookies through
