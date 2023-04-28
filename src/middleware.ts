@@ -61,7 +61,7 @@ export const csrfMiddleware = (options ?: CsrfOptions) : Middleware => {
     };
 
     return async (context, next) => {
-        context.append('Vary', 'Cookie');
+        context.vary('Cookie');
 
         const cookieToken = Buffer.from(context.cookies.get(cookieName) ?? '', 'base64');
         let realToken = cookieToken.subarray(0, tokenLength);
