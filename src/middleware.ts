@@ -7,6 +7,7 @@ export type CsrfOptions = {
     cookieName ?: string;
     headerName ?: string;
     cookieOptions ?: CookieOptions;
+    disableWithoutOrigin ?: boolean;
 };
 
 export const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
@@ -61,6 +62,12 @@ export const csrfMiddleware = (options ?: CsrfOptions) : Middleware => {
     };
 
     return async (context, next) => {
+        const origin = context.get('Origin');
+
+        if (!origin && options?.disableWithoutOrigin) {
+            return next();
+        }
+
         context.vary('Cookie');
 
         const cookieToken = Buffer.from(context.cookies.get(cookieName) ?? '', 'base64');

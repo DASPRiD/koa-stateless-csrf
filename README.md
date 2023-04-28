@@ -61,3 +61,18 @@ app.use(csrfMiddleware({
     },
 }));
 ```
+
+## Disabling CSRF for non-browser clients
+
+By default, CSRF protection is always active. This might be undesired if your API serves both browser and non-browser
+clients (e.g. native apps).
+
+To solve this, you can enable the `disableWithoutOrigin` option. To not be susceptible to CSRF attacks, your application
+must then adhere to the following when no `Origin` header is present:
+
+- Do not send **any** cookies to the client. This is to prevent things like login CSRF attacks.
+- Only accept authentication via headers and ignore any cookies.
+
+> **Note**: This is only feasible when your API sits on its own (sub-)domain, so that every request is a cross-origin 
+> request performed via `fetch`. On same-origin requests, browsers can omit the `Origin` header for `GET` requests or
+> when a request is done via a `<form>` submit.

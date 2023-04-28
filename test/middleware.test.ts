@@ -31,6 +31,36 @@ describe('Middleware', () => {
         expect(context.response.get('Vary')).toEqual('Cookie');
     });
 
+    it('should allow to disable CSRF without origin', async () => {
+        const context = createContext({
+            method: 'POST',
+        });
+        const middleware = csrfMiddleware({disableWithoutOrigin: true});
+
+        let nextCalled = false;
+
+        await middleware(context, async () => {
+            nextCalled = true;
+            return Promise.resolve();
+        });
+
+        expect(nextCalled).toBeTruthy();
+    });
+
+    it('should keep CSRF active with origin', async () => {
+        const context = createContext({
+            method: 'POST',
+            headers: {
+                Origin: 'http://localhost',
+            },
+        });
+        const middleware = csrfMiddleware({disableWithoutOrigin: true});
+
+        await expect(async () => {
+            await middleware(context, voidNext);
+        }).rejects.toThrow(badCsrfError);
+    });
+
     it('should send new token without existing token', async () => {
         const context = createContext({
             headers: {
