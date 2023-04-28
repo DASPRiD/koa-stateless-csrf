@@ -76,3 +76,11 @@ must then adhere to the following when no `Origin` header is present:
 > **Note**: This is only feasible when your API sits on its own (sub-)domain, so that every request is a cross-origin 
 > request performed via `fetch`. On same-origin requests, browsers can omit the `Origin` header for `GET` requests or
 > when a request is done via a `<form>` submit.
+
+## Only allow specific origins
+
+Normally every origin is allowed to perform requests. To add defense in depth, you can allow only specific origins to
+perform requests; any other origins will be denied.
+
+To do so, set the `allowedOrigins` option to an array of origins you want to allow. An origin is defined as the
+combination of scheme, host and optionally the port (e.g. `http://localhost:8000` or `https://my.site`. 

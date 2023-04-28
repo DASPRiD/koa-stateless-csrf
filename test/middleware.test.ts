@@ -17,6 +17,7 @@ const createContext = (options ?: RequestOptions) => {
 
 const voidNext = async () : Promise<void> => Promise.resolve();
 
+const badOriginError = createHttpError(400, 'The calling origin is not allowed to perform this request');
 const badCsrfError = createHttpError(400, 'The CSRF token in the cookie doesn\'t match the one received in a header');
 
 const validHeaderToken = 'qWE6kYdLWfUw5FRBtOJB8614yfnR7/aKZpHYZSPlQ21AKLK9Cn0qDK4uwoxOFmcVPVP10tMfsmJiJSb4XpdI2g==';
@@ -44,6 +45,7 @@ describe('Middleware', () => {
             return Promise.resolve();
         });
 
+        expect(context.response.get('Vary')).toEqual('Origin, Cookie');
         expect(nextCalled).toBeTruthy();
     });
 
@@ -59,6 +61,24 @@ describe('Middleware', () => {
         await expect(async () => {
             await middleware(context, voidNext);
         }).rejects.toThrow(badCsrfError);
+        expect(context.response.get('Vary')).toEqual('Origin, Cookie');
+    });
+
+    it('should disallow bad origins when enabled', async () => {
+        const context = createContext({
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': validHeaderToken,
+                'Cookie': `csrf_token=${validCookieToken}`,
+                Origin: 'http://bad.actor',
+            },
+        });
+        const middleware = csrfMiddleware({allowedOrigins: ['https://safe.space']});
+
+        await expect(async () => {
+            await middleware(context, voidNext);
+        }).rejects.toThrow(badOriginError);
+        expect(context.response.get('Vary')).toEqual('Origin, Cookie');
     });
 
     it('should send new token without existing token', async () => {

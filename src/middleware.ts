@@ -8,9 +8,18 @@ export type CsrfOptions = {
     headerName ?: string;
     cookieOptions ?: CookieOptions;
     disableWithoutOrigin ?: boolean;
+    allowedOrigins ?: string[];
 };
 
 export const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
+
+const badOriginError = (context : Context) : never => {
+    context.throw(
+        400,
+        'The calling origin is not allowed to perform this request',
+        {name: 'CsrfError'}
+    );
+};
 
 const badCsrfError = (context : Context) : never => {
     context.throw(
@@ -62,13 +71,21 @@ export const csrfMiddleware = (options ?: CsrfOptions) : Middleware => {
     };
 
     return async (context, next) => {
+        if (options?.disableWithoutOrigin || options?.allowedOrigins) {
+            context.vary('Origin');
+        }
+
+        context.vary('Cookie');
+
         const origin = context.get('Origin');
 
         if (!origin && options?.disableWithoutOrigin) {
             return next();
         }
 
-        context.vary('Cookie');
+        if (options?.allowedOrigins && !options.allowedOrigins.includes(origin)) {
+            return badOriginError(context);
+        }
 
         const cookieToken = Buffer.from(context.cookies.get(cookieName) ?? '', 'base64');
         let realToken = cookieToken.subarray(0, tokenLength);
