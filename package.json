@@ -1,6 +1,6 @@
 {
   "name": "koa-stateless-csrf",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Stateless CSRF support for Koa APIs",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

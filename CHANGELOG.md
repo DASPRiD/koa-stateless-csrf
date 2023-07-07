@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/dasprid/koa-stateless-csrf/compare/v1.2.0...v1.2.1) (2023-07-07)
+
+
+### Bug Fixes
+
+* do not regenerate new token for safe methods without fetch request ([b037d67](https://github.com/dasprid/koa-stateless-csrf/commit/b037d67c97b8c62da2f2c8b1bfdb33d6b0ca4baa))
+
 # [1.2.0](https://github.com/dasprid/koa-stateless-csrf/compare/v1.1.0...v1.2.0) (2023-04-28)
 
 
