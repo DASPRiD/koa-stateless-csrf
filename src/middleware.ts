@@ -70,6 +70,19 @@ export const csrfMiddleware = (options ?: CsrfOptions) : Middleware => {
         return token;
     };
 
+    const readCookieToken = (context : Context) : [Buffer, boolean] => {
+        const cookieToken = Buffer.from(context.cookies.get(cookieName) ?? '', 'base64');
+        let realToken = cookieToken.subarray(0, tokenLength);
+        let regenerated = false;
+
+        if (realToken.length !== tokenLength) {
+            realToken = regenerateToken(context);
+            regenerated = true;
+        }
+
+        return [realToken, regenerated];
+    };
+
     return async (context, next) => {
         if (options?.disableWithoutOrigin || options?.allowedOrigins) {
             context.vary('Origin');
@@ -87,18 +100,10 @@ export const csrfMiddleware = (options ?: CsrfOptions) : Middleware => {
             return badOriginError(context);
         }
 
-        const cookieToken = Buffer.from(context.cookies.get(cookieName) ?? '', 'base64');
-        let realToken = cookieToken.subarray(0, tokenLength);
-        let realTokenSignature : Buffer | null = cookieToken.subarray(tokenLength);
-
-        if (realToken.length !== tokenLength) {
-            realToken = regenerateToken(context);
-            realTokenSignature = null;
-        }
-
         const sentToken = extractToken(context);
 
         if (sentToken === 'fetch') {
+            const [realToken] = readCookieToken(context);
             setTokenResponse(context, realToken);
         }
 
@@ -106,7 +111,9 @@ export const csrfMiddleware = (options ?: CsrfOptions) : Middleware => {
             return next();
         }
 
-        if (!realTokenSignature) {
+        const [realToken, realTokenRegenerated] = readCookieToken(context);
+
+        if (realTokenRegenerated) {
             // The token has just been regenerated, so we can skip any tests.
             setTokenResponse(context, realToken);
             return badCsrfError(context);

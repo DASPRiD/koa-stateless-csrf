@@ -113,6 +113,7 @@ describe('Middleware', () => {
             });
 
             expect(nextCalled).toBeTruthy();
+            expect(context.response.get('Set-Cookie')[0]).toBeUndefined();
         });
     }
 
@@ -186,7 +187,11 @@ describe('Middleware', () => {
     });
 
     it('should allow changing cookie options', async () => {
-        const context = createContext();
+        const context = createContext({
+            headers: {
+                'X-CSRF-Token': 'fetch',
+            },
+        });
         const middleware = csrfMiddleware({
             cookieOptions: {
                 sameSite: 'strict',
